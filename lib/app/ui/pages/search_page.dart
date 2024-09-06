@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_new_joiner_app/app/models/package.dart';
 import 'package:flutter_new_joiner_app/app/ui/widgets/package_tile.dart';
-
-import 'package:flutter_new_joiner_app/app/view_models/search_package_view_model.dart';
+import 'package:flutter_new_joiner_app/app/view_models/search_package_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:provider/provider.dart';
 
-class SearchPage extends StatefulWidget {
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  late final listeningProvider = Provider.of<SearchPackageViewModel>(context);
-  late final packageProvider =
-      Provider.of<SearchPackageViewModel>(context, listen: false);
-
+class _SearchPageState extends ConsumerState<SearchPage> {
   var _query = "";
 
   // PAGINATION
@@ -33,11 +28,14 @@ class _SearchPageState extends State<SearchPage> {
       return;
     }
 
-    // LOAD PACKAGE
+    //LOAD PACKAGE
+
     try {
-      await packageProvider.loadPackageByQuery(
-          _query, packageProvider.selectedFilter, pageKey);
-      final packageList = packageProvider.packageList;
+      await ref
+          .read(searchPackageProvider.notifier)
+          .getPackageByQuery(_query, pageKey);
+
+      final packageList = ref.read(searchPackageProvider);
       final isLastPage = packageList.isEmpty;
       if (isLastPage) {
         _pagingController.appendLastPage(packageList);
@@ -53,6 +51,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
+
     _pagingController.addPageRequestListener((pageKey) {
       _loadPagedPackage(pageKey);
     });
@@ -64,54 +63,54 @@ class _SearchPageState extends State<SearchPage> {
     _pagingController.dispose();
   }
 
-  void onFilterPressed() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(5.0),
-            ),
-          ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Sort by"),
-              IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(
-                  Icons.close,
-                ),
-              )
-            ],
-          ),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final filter in packageProvider.filterOptions.keys)
-                    RadioListTile(
-                      value: filter,
-                      groupValue: packageProvider.selectedFilter,
-                      onChanged: (value) {
-                        setState(() {
-                          packageProvider.setSelectedFilter(value!);
-                        });
-                      },
-                      title: Text(packageProvider.filterOptions[filter]!),
-                    ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    ).then((value) => _pagingController.refresh());
-  }
+  // void onFilterPressed() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         shape: const RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.all(
+  //             Radius.circular(5.0),
+  //           ),
+  //         ),
+  //         title: Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             const Text("Sort by"),
+  //             IconButton(
+  //               onPressed: () {
+  //                 Navigator.pop(context);
+  //               },
+  //               icon: const Icon(
+  //                 Icons.close,
+  //               ),
+  //             )
+  //           ],
+  //         ),
+  //         content: StatefulBuilder(
+  //           builder: (context, setState) {
+  //             return Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 for (final filter in packageProvider.filterOptions.keys)
+  //                   RadioListTile(
+  //                     value: filter,
+  //                     groupValue: packageProvider.selectedFilter,
+  //                     onChanged: (value) {
+  //                       setState(() {
+  //                         packageProvider.setSelectedFilter(value!);
+  //                       });
+  //                     },
+  //                     title: Text(packageProvider.filterOptions[filter]!),
+  //                   ),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //       );
+  //     },
+  //   ).then((value) => _pagingController.refresh());
+  // }
 
   void onSubmitted(String query) {
     _query = query;
@@ -138,7 +137,7 @@ class _SearchPageState extends State<SearchPage> {
             child: TextField(
               decoration: InputDecoration(
                 suffixIcon: IconButton(
-                  onPressed: onFilterPressed,
+                  onPressed: () {},
                   icon: const Icon(
                     Icons.tune,
                   ),
@@ -159,20 +158,20 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => Future.sync(() => _pagingController.refresh()),
-              child: PagedListView(
-                pagingController: _pagingController,
-                builderDelegate: PagedChildBuilderDelegate<Package>(
-                  itemBuilder: (context, package, index) => PackageTile(
-                    packageName: package.package,
+            child: PagedListView(
+              pagingController: _pagingController,
+              builderDelegate: PagedChildBuilderDelegate<Package>(
+                itemBuilder: (context, package, index) => PackageTile(
+                  packageName: package.package,
+                ),
+                noItemsFoundIndicatorBuilder: (context) => const Center(
+                  child: Text(
+                    "No data :(",
                   ),
-                  noItemsFoundIndicatorBuilder: (context) =>
-                      const Center(child: Text("No data :(")),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

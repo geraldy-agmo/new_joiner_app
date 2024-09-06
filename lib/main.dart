@@ -1,27 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_new_joiner_app/app/ui/pages/bottom_navigation.dart';
 import 'package:flutter_new_joiner_app/app/core/theme/theme.dart';
-import 'package:flutter_new_joiner_app/app/view_models/favourite_view_model.dart';
-import 'package:flutter_new_joiner_app/app/view_models/package_details_view_model.dart';
-import 'package:flutter_new_joiner_app/app/view_models/search_package_view_model.dart';
-import 'package:provider/provider.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (context) => SearchPackageViewModel(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => PackageDetailsViewModel(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) => FavouriteViewModel(),
-        ),
-      ],
-      child: const App(),
-    ),
+    const ProviderScope(child: App()),
   );
 }
 

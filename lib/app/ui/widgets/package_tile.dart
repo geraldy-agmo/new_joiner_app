@@ -1,46 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_new_joiner_app/app/ui/pages/package_detail_page.dart';
-import 'package:flutter_new_joiner_app/app/view_models/favourite_view_model.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_new_joiner_app/app/view_models/favourite_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class PackageTile extends StatefulWidget {
+class PackageTile extends ConsumerStatefulWidget {
   const PackageTile({required this.packageName, super.key});
 
   final String packageName;
 
   @override
-  State<PackageTile> createState() => _PackageTileState();
+  ConsumerState<PackageTile> createState() => _PackageTileState();
 }
 
-class _PackageTileState extends State<PackageTile> {
-  late final favouritesProvider =
-      Provider.of<FavouriteViewModel>(context, listen: false);
+class _PackageTileState extends ConsumerState<PackageTile> {
+  // late final favouritesProvider =
+  //     Provider.of<FavouriteViewModel>(context, listen: false);
 
-  void onPackagePressed() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            PackageDetailPage(packageName: widget.packageName),
-      ),
-    );
-  }
+  // void onPackagePressed() {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) =>
+  //           PackageDetailPage(packageName: widget.packageName),
+  //     ),
+  //   );
+  // }
 
   Future<void> toggleFavourite() async {
-    await favouritesProvider.toggleFavourite(widget.packageName);
+    await ref
+        .read(favouriteProvider.notifier)
+        .toggleFavourite(widget.packageName);
   }
 
   @override
   Widget build(BuildContext context) {
-    final isFavourite = context.select((FavouriteViewModel favourite) =>
-        favourite.isFavourite(widget.packageName));
+    final isFavorite =
+        ref.watch(favouriteProvider.notifier).isFavourite(widget.packageName);
+
     return ListTile(
       onTap: () {
-        onPackagePressed();
+        // onPackagePressed();
       },
       leading: IconButton(
         onPressed: toggleFavourite,
-        icon: isFavourite
+        icon: isFavorite
             ? const Icon(
                 Icons.favorite,
                 color: Colors.red,
@@ -52,7 +54,9 @@ class _PackageTileState extends State<PackageTile> {
       title: Text(
         widget.packageName,
       ),
-      trailing: const Icon(Icons.keyboard_arrow_right),
+      trailing: const Icon(
+        Icons.keyboard_arrow_right,
+      ),
     );
   }
 }

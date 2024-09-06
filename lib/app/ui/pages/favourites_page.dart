@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_new_joiner_app/app/ui/widgets/package_tile.dart';
-import 'package:flutter_new_joiner_app/app/view_models/favourite_view_model.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_new_joiner_app/app/view_models/favourite_riverpod.dart';
 
-class FavouritesPage extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class FavouritesPage extends ConsumerStatefulWidget {
   const FavouritesPage({super.key});
 
   @override
-  State<FavouritesPage> createState() => _FavouritesPageState();
+  ConsumerState<FavouritesPage> createState() => _FavouritesPageState();
 }
 
-class _FavouritesPageState extends State<FavouritesPage> {
-  late final favouritesProvider =
-      Provider.of<FavouriteViewModel>(context, listen: false);
-
+class _FavouritesPageState extends ConsumerState<FavouritesPage> {
   @override
   void initState() {
     super.initState();
@@ -21,13 +19,13 @@ class _FavouritesPageState extends State<FavouritesPage> {
   }
 
   Future<void> getFavouriteList() async {
-    await favouritesProvider.getFavouriteList();
+    await ref.read(favouriteProvider.notifier).getFavouriteList();
   }
 
-  Future<void> removeFavourite(String selectedPackage) async {
-    await favouritesProvider.removeFavourite(selectedPackage);
-    onRemove(selectedPackage);
-  }
+  // Future<void> removeFavourite(String selectedPackage) async {
+  //   await favouritesProvider.removeFavourite(selectedPackage);
+  //   onRemove(selectedPackage);
+  // }
 
   void onRemove(String selectedPackage) {
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -46,8 +44,7 @@ class _FavouritesPageState extends State<FavouritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final favourites = context
-        .select((FavouriteViewModel favourite) => favourite.favouriteList);
+    final favourites = ref.watch(favouriteProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,9 +66,7 @@ class _FavouritesPageState extends State<FavouritesPage> {
               itemBuilder: (context, index) {
                 return Dismissible(
                   direction: DismissDirection.endToStart,
-                  onDismissed: (direction) {
-                    removeFavourite(favourites[index]);
-                  },
+                  onDismissed: (direction) {},
                   key: ValueKey(favourites[index]),
                   background: Container(
                     color: Colors.red,
